@@ -885,7 +885,7 @@ the specific language governing permissions and limitations under the Apache Lic
                     id:element.prop("value"),
                     text:element.text(),
                     element: element.get(),
-                    css: element.attr("class"),
+                    css: this.stripRestrictedClasses(element.attr("class")),
                     disabled: element.prop("disabled"),
                     locked: equal(element.attr("locked"), "locked") || equal(element.data("locked"), true)
                 };
@@ -894,7 +894,7 @@ the specific language governing permissions and limitations under the Apache Lic
                     text:element.attr("label"),
                     children:[],
                     element: element.get(),
-                    css: element.attr("class")
+                    css: this.stripRestrictedClasses(element.attr("class"))
                 };
             }
         },
@@ -923,48 +923,50 @@ the specific language governing permissions and limitations under the Apache Lic
                     var populate, id=this.opts.id;
 
                     populate=function(results, container, depth) {
-
-                        var i, l, result, selectable, disabled, compound, node, label, innerContainer, formatted;
+                        var i, l, result, selectable, disabled, compound, node, label, innerContainer, formatted, formattedClass;
 
                         results = opts.sortResults(results, container, query);
 
                         // collect the created nodes for bulk append
                         var nodes = [];
                         for (i = 0, l = results.length; i < l; i = i + 1) {
-
-                            result=results[i];
-
+                            result = results[i];
                             disabled = (result.disabled === true);
                             selectable = (!disabled) && (id(result) !== undefined);
+                            compound = result.children && result.children.length > 0;
 
-                            compound=result.children && result.children.length > 0;
+                            node = "<li class=\"";
+                            node += "select2-results-dept-" + depth;
+                            node += " select2-result";
+                            node += selectable ? " select2-result-selectable" : " select2-result-unselectable";
+                            if (disabled)
+                                node += " select2-disabled";
+                            if (compound)
+                                node += " select2-result-with-children";
+                            formattedClass = self.opts.formatResultCssClass(result);
+                            if (formattedClass != undefined)
+                                node += " " + formattedClass;
+                            node += "\" role=\"presentation\">";
 
-                            node=$("<li></li>");
-                            node.addClass("select2-results-dept-"+depth);
-                            node.addClass("select2-result");
-                            node.addClass(selectable ? "select2-result-selectable" : "select2-result-unselectable");
-                            if (disabled) { node.addClass("select2-disabled"); }
-                            if (compound) { node.addClass("select2-result-with-children"); }
-                            node.addClass(self.opts.formatResultCssClass(result));
-                            node.attr("role", "presentation");
+                            label = "<div class=\"select2-result-label\"";
+                            label += " id=\"select2-result-label-" + nextUid() + "\"";
+                            label += " role=\"option\"";
+                            label += ">";
+                            formatted = opts.formatResult(result, label, query, self.opts.escapeMarkup);
+                            if (formatted !== undefined)
+                                label += formatted;
+                            label += "</div>";
 
-                            label=$(document.createElement("div"));
-                            label.addClass("select2-result-label");
-                            label.attr("id", "select2-result-label-" + nextUid());
-                            label.attr("role", "option");
+                            node += label;
+                            node += "</li>";
 
-                            formatted=opts.formatResult(result, label, query, self.opts.escapeMarkup);
-                            if (formatted!==undefined) {
-                                label.html(formatted);
-                                node.append(label);
-                            }
-
+                            // I still used jQuery wrapping for setting "data" below
+                            node = $(node);
 
                             if (compound) {
-
-                                innerContainer=$("<ul></ul>");
+                                innerContainer = $("<ul></ul>");
                                 innerContainer.addClass("select2-result-sub");
-                                populate(result.children, innerContainer, depth+1);
+                                populate(result.children, innerContainer, depth + 1);
                                 node.append(innerContainer);
                             }
 
@@ -1917,6 +1919,16 @@ the specific language governing permissions and limitations under the Apache Lic
             if (width !== null) {
                 this.container.css("width", width);
             }
+        },
+        
+        /**
+         * Strips restricted classes
+         * 
+         * @param {String}
+         * @returns {String}
+         */
+        stripRestrictedClasses: function(classesString) {
+            return classesString.replace(this.opts.restrictedClasses, '');
         }
     });
 
@@ -2920,7 +2932,7 @@ the specific language governing permissions and limitations under the Apache Lic
 
         // multi
         updateSelection: function (data) {
-            var ids = [], filtered = [], self = this;
+           var ids = [], filtered = [], self = this;
 
             // filter out duplicates
             $(data).each(function () {
@@ -2933,8 +2945,10 @@ the specific language governing permissions and limitations under the Apache Lic
 
             this.selection.find(".select2-search-choice").remove();
             $(data).each(function () {
-                self.addSelectedChoice(this);
+                self.addSelectedChoice(this, true);
             });
+            
+            this.setVal(ids);
             self.postprocessResults();
         },
 
@@ -3009,7 +3023,7 @@ the specific language governing permissions and limitations under the Apache Lic
             this.focusSearch();
         },
 
-        addSelectedChoice: function (data) {
+        addSelectedChoice: function (data, isBulk) {
             var enableChoice = !data.locked,
                 enabledItem = $(
                     "<li class='select2-search-choice'>" +
@@ -3057,7 +3071,10 @@ the specific language governing permissions and limitations under the Apache Lic
             choice.insertBefore(this.searchContainer);
 
             val.push(id);
-            this.setVal(val);
+            
+            if (isBulk != true) {
+                this.setVal(val);
+            }
         },
 
         // multi
@@ -3189,17 +3206,23 @@ the specific language governing permissions and limitations under the Apache Lic
 
         // multi
         setVal: function (val) {
-            var unique;
-            if (this.select) {
-                this.select.val(val);
-            } else {
-                unique = [];
-                // filter out duplicates
-                $(val).each(function () {
-                    if (indexOf(this, unique) < 0) unique.push(this);
-                });
-                this.opts.element.val(unique.length === 0 ? "" : unique.join(this.opts.separator));
+        if (this.select) {
+            this.select.val(val);
+        } else {
+
+            //filter out duplicates
+            var distinct = [];
+            var unique = {};
+            for (var i in val) {
+
+                if (typeof (unique[val[i]]) == "undefined") {
+                    distinct.push(val[i]);
+                }
+                unique[val[i]] = 0;
             }
+
+            this.opts.element.val(distinct.length === 0 ? "" : distinct.join(this.opts.separator));
+        }
         },
 
         // multi
@@ -3390,6 +3413,7 @@ the specific language governing permissions and limitations under the Apache Lic
         loadMorePadding: 0,
         closeOnSelect: true,
         openOnEnter: true,
+        restrictedClasses: /ng-binding|ng-scope/gi,
         containerCss: {},
         dropdownCss: {},
         containerCssClass: "",
