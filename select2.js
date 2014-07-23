@@ -699,13 +699,6 @@ the specific language governing permissions and limitations under the Apache Lic
 
             this.container = this.createContainer();
 
-            this.liveRegion = $("<span>", {
-                    role: "status",
-                    "aria-live": "polite"
-                })
-                .addClass("select2-hidden-accessible")
-                .appendTo(document.body);
-
             this.containerId="s2id_"+(opts.element.attr("id") || "autogen"+nextUid());
             this.containerEventName= this.containerId
                 .replace(/([.])/g, '_')
@@ -863,7 +856,6 @@ the specific language governing permissions and limitations under the Apache Lic
 
             if (select2 !== undefined) {
                 select2.container.remove();
-                select2.liveRegion.remove();
                 select2.dropdown.remove();
                 element
                     .removeClass("select2-offscreen")
@@ -880,7 +872,6 @@ the specific language governing permissions and limitations under the Apache Lic
 
             cleanupJQueryElements.call(this,
                 "container",
-                "liveRegion",
                 "dropdown",
                 "results",
                 "search"
@@ -929,7 +920,7 @@ the specific language governing permissions and limitations under the Apache Lic
 
             opts = $.extend({}, {
                 populateResults: function(container, results, query) {
-                    var populate, id=this.opts.id, liveRegion=this.liveRegion;
+                    var populate, id=this.opts.id;
 
                     populate=function(results, container, depth) {
 
@@ -983,7 +974,6 @@ the specific language governing permissions and limitations under the Apache Lic
 
                         // bulk append the created nodes
                         container.append(nodes);
-                        liveRegion.text(opts.formatMatches(results.length));
                     };
 
                     populate(results, container, 0);
@@ -1580,8 +1570,6 @@ the specific language governing permissions and limitations under the Apache Lic
 
             this.ensureHighlightVisible();
 
-            this.liveRegion.text(choice.text());
-
             data = choice.data("select2-data");
             if (data) {
                 this.opts.element.trigger({ type: "select2-highlight", val: this.id(data), choice: data });
@@ -1697,12 +1685,6 @@ the specific language governing permissions and limitations under the Apache Lic
             function postRender() {
                 search.removeClass("select2-active");
                 self.positionDropdown();
-                if (results.find('.select2-no-results,.select2-selection-limit,.select2-searching').length) {
-                    self.liveRegion.text(results.text());
-                }
-                else {
-                    self.liveRegion.text(self.opts.formatMatches(results.find('.select2-result-selectable').length));
-                }
             }
 
             function render(html) {
