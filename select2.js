@@ -1920,15 +1920,15 @@ the specific language governing permissions and limitations under the Apache Lic
                 this.container.css("width", width);
             }
         },
-        
+
         /**
          * Strips restricted classes
-         * 
+         *
          * @param {String}
          * @returns {String}
          */
         stripRestrictedClasses: function(classesString) {
-            return classesString.replace(this.opts.restrictedClasses, '');
+            return (typeof classesString !== 'undefined') ? classesString.replace(this.opts.restrictedClasses, '') : classesString;
         }
     });
 
@@ -2947,7 +2947,7 @@ the specific language governing permissions and limitations under the Apache Lic
             $(data).each(function () {
                 self.addSelectedChoice(this, true);
             });
-            
+
             this.setVal(ids);
             self.postprocessResults();
         },
@@ -3071,7 +3071,7 @@ the specific language governing permissions and limitations under the Apache Lic
             choice.insertBefore(this.searchContainer);
 
             val.push(id);
-            
+
             if (isBulk != true) {
                 this.setVal(val);
             }
@@ -3236,7 +3236,7 @@ the specific language governing permissions and limitations under the Apache Lic
                     if (equal(this.opts.id(current[i]), this.opts.id(old[j]))) {
                         current.splice(i, 1);
                         if(i>0){
-                        	i--;
+                            i--;
                         }
                         old.splice(j, 1);
                         j--;
