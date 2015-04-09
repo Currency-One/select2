@@ -46,6 +46,9 @@ the specific language governing permissions and limitations under the Apache Lic
         return;
     }
 
+    // Attempt to detect touch devices
+    var supportsTouchEvents = (('ontouchstart' in window) || (navigator.msMaxTouchPoints > 0));
+
     var AbstractSelect2, SingleSelect2, MultiSelect2, nextUid, sizer,
         lastMousePosition={x:0,y:0}, $document, scrollBarDimensions,
 
@@ -1863,7 +1866,9 @@ the specific language governing permissions and limitations under the Apache Lic
 
         // abstract
         focusSearch: function () {
-            focus(this.search);
+            if (this.opts.shouldFocusInput(this)) {
+                focus(this.search);
+            }
         },
 
         // abstract
@@ -2180,7 +2185,7 @@ the specific language governing permissions and limitations under the Apache Lic
                 if (document.activeElement === this.body.get(0)) {
                     window.setTimeout(this.bind(function() {
                         if (this.opened() && this.results && this.results.length > 1) {
-                            this.search.focus();
+                            this.focusSearch();
                         }
                     }), 0);
                 }
@@ -2259,9 +2264,7 @@ the specific language governing permissions and limitations under the Apache Lic
             }));
 
             dropdown.on("mousedown touchstart", this.bind(function() {
-                if (this.opts.shouldFocusInput(this)) {
-                    this.search.focus();
-                }
+                this.focusSearch();
             }));
 
             selection.on("focus", this.bind(function(e) {
@@ -2939,9 +2942,7 @@ the specific language governing permissions and limitations under the Apache Lic
             this.prefillNextSearchTerm();
             this.updateResults(true);
 
-            if (this.opts.shouldFocusInput(this)) {
-                this.search.focus();
-            }
+            this.focusSearch();
             this.opts.element.trigger($.Event("select2-open"));
         },
 
@@ -2954,7 +2955,7 @@ the specific language governing permissions and limitations under the Apache Lic
         // multi
         focus: function () {
             this.close();
-            this.search.focus();
+            this.focusSearch();
         },
 
         // multi
@@ -3489,10 +3490,6 @@ the specific language governing permissions and limitations under the Apache Lic
         searchInputPlaceholder: '',
         createSearchChoicePosition: 'top',
         shouldFocusInput: function (instance) {
-            // Attempt to detect touch devices
-            var supportsTouchEvents = (('ontouchstart' in window) ||
-                                       (navigator.msMaxTouchPoints > 0));
-
             // Only devices which support touch events should be special cased
             if (!supportsTouchEvents) {
                 return true;
@@ -3503,7 +3500,7 @@ the specific language governing permissions and limitations under the Apache Lic
                 return false;
             }
 
-            return true;
+            return false;
         }
     };
 
