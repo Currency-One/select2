@@ -1416,7 +1416,11 @@ the specific language governing permissions and limitations under the Apache Lic
                         if (self.opts.selectOnBlur) {
                             self.selectHighlighted({noFocus: true});
                         }
-                        self.close();
+
+                        if (!supportsTouchEvents) {
+                            self.close();
+                        }
+
                         e.preventDefault();
                         e.stopPropagation();
                     }
