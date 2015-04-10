@@ -3495,16 +3495,7 @@ the specific language governing permissions and limitations under the Apache Lic
         createSearchChoicePosition: 'top',
         shouldFocusInput: function (instance) {
             // Only devices which support touch events should be special cased
-            if (!supportsTouchEvents) {
-                return true;
-            }
-
-            // Never focus the input if search is disabled
-            if (instance.opts.minimumResultsForSearch < 0) {
-                return false;
-            }
-
-            return false;
+            return !supportsTouchEvents ? true : false;
         }
     };
 
