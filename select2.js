@@ -48,6 +48,8 @@ the specific language governing permissions and limitations under the Apache Lic
 
     // Attempt to detect touch devices
     var supportsTouchEvents = (('ontouchstart' in window) || (navigator.msMaxTouchPoints > 0));
+    // To fix issue with mobiles
+    var openTime = new Date().getTime();
 
     var AbstractSelect2, SingleSelect2, MultiSelect2, nextUid, sizer,
         lastMousePosition={x:0,y:0}, $document, scrollBarDimensions,
@@ -1417,9 +1419,7 @@ the specific language governing permissions and limitations under the Apache Lic
                             self.selectHighlighted({noFocus: true});
                         }
 
-                        if (!supportsTouchEvents) {
-                            self.close();
-                        }
+                        self.close();
 
                         e.preventDefault();
                         e.stopPropagation();
@@ -1454,12 +1454,17 @@ the specific language governing permissions and limitations under the Apache Lic
                 });
             });
 
-
+            openTime = new Date().getTime();
         },
 
         // abstract
         close: function () {
             if (!this.opened()) return;
+
+            // Fix closing issue for mobile
+            if (openTime > (new Date().getTime()) - 500) {
+                return;
+            }
 
             var cid = this.containerEventName,
                 scroll = "scroll." + cid,
